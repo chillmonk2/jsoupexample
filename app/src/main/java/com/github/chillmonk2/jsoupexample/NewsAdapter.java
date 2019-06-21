@@ -34,15 +34,11 @@ public class NewsAdapter extends ArrayAdapter<NewsObject> {
 
         // Find the TextView in the list_item.xml layout with the ID miwok_text_view.
         TextView mNewsDesc = (TextView) listItemView.findViewById(R.id.newsDescTV);
+        TextView magnitudeView = (TextView) listItemView.findViewById(R.id.magnitude);
 
         mNewsDesc.setText(currentNews.getNewsDesc());
+        magnitudeView.setText(currentNews.getNewsStatus());
 
-        // Find the TextView in the list_item.xml layout with the ID default_text_view.
-        final TextView mNewsUrl = (TextView) listItemView.findViewById(R.id.newsUrlTV);
-        // Get the default translation from the currentWord object and set this text on
-        // the default TextView.
-        mNewsUrl.setText(currentNews.getNewsUrl());
-        Log.e(MainActivity.class.getSimpleName(),mNewsDesc+" "+ mNewsUrl);
 
 
         return listItemView;

@@ -14,12 +14,15 @@ import android.support.design.widget.BottomNavigationView;
 
 import android.app.LoaderManager;
 import android.support.v4.content.Loader;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.annotation.NonNull;
 
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -42,11 +45,12 @@ public class MainActivity extends AppCompatActivity {
     public StringBuilder t;
     public  StringBuilder n;
     public String title;
-
+    public ProgressDialog progressDialog;
     public ListView listView;
     public NewsAdapter mNewsAdapter;
-    public ProgressDialog progressDialog;
-    //private ProgressDialog progressDialog;
+    private SwipeRefreshLayout mSwipeRefresh;
+
+
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -69,14 +73,20 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getSupportActionBar().setTitle("News");
+        getSupportActionBar().setTitle("News");
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        new TaskLoader().execute();
+        mSwipeRefresh = findViewById(R.id.swipeRefreshLayout);
         BottomNavigationView navView = findViewById(R.id.nav_view);
         mNewsDescTV = findViewById(R.id.newsDescTV);
         //progressDialog = new ProgressDialog(getApplicationContext());
-        mNewsUrlTV = findViewById(R.id.newsUrlTV);
+        //mNewsUrlTV = findViewById(R.id.newsUrlTV);
         listView = findViewById(R.id.listview);
         mNewsAdapter = new NewsAdapter(this, new ArrayList<NewsObject>());
         listView.setAdapter(mNewsAdapter);
@@ -95,7 +105,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-
+    mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        @Override
+        public void onRefresh() {
+            new TaskLoader().execute();
+            mSwipeRefresh.setRefreshing(false);
+        }
+    });
     }
 
     private class TaskLoader extends AsyncTask<Void,Void,ArrayList<NewsObject>> {
@@ -107,6 +123,8 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
 
             super.onPreExecute();
+             progressDialog= new ProgressDialog(MainActivity.this);
+             progressDialog.show();
         }
 
         @Override
@@ -118,13 +136,34 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(MainActivity.class.getSimpleName(),"Main Activity");
                 document = Jsoup.connect(url).get();
                 Elements lnews = document.select("ul.newsticker li b");
+                Elements bnews = document.select("div#galleryimage p");
                 //Get the title of the website
-                for (Element news : lnews) {
+
+                for(Element news:bnews){
+
                     String descNews = news.select("p").text();
-                    String newsUrl = news.select("a").attr("href").toString();
+                    String newsGif = news.select("p img").attr("src");
+                    String newsStatus = "Old" ;
+                    if(newsGif.equals("new.gif"))
+                    {
+                        newsStatus = "New";
+                        //System.out.println("News Status changed");
+                    }
+                    String newsUrl = news.select("a").attr("href");
+                    if(newsUrl.startsWith("http"))
+                    {
+                        //do nothing
+                        mList.add(new NewsObject(descNews,newsUrl,newsStatus));
+                    }
+                    else
+                        newsUrl=null;
+                }
+                for (Element news : lnews) {//latest news Section
+                    String descNews = news.select("p").text();
+                    String newsUrl = news.select("a").attr("href");
                     if (newsUrl.startsWith("http")) {
                         //do nothing
-                        mList.add(new NewsObject(descNews, newsUrl));
+                        mList.add(new NewsObject(descNews, newsUrl,"Old"));
                     } else
                         newsUrl = null;
                 }
@@ -138,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(ArrayList<NewsObject> newsArrayList) {
             super.onPostExecute(newsArrayList);
+            progressDialog.dismiss();
             mNewsAdapter.addAll(newsArrayList);
             mNewsAdapter.notifyDataSetChanged();
         }
