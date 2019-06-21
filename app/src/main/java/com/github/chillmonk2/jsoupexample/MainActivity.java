@@ -1,9 +1,12 @@
 package com.github.chillmonk2.jsoupexample;
 
 import android.app.ProgressDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -28,6 +31,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.chillmonk2.jsoupexample.data.NewsContract;
+import com.github.chillmonk2.jsoupexample.data.NewsDbHelper;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -49,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     public ListView listView;
     public NewsAdapter mNewsAdapter;
     private SwipeRefreshLayout mSwipeRefresh;
-
+    //public NewsDbHelper mNewsDbHelper ;
 
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
@@ -81,7 +87,8 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayUseLogoEnabled(true);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        new TaskLoader().execute();
+        //mNewsDbHelper = new NewsDbHelper(this);
+
         mSwipeRefresh = findViewById(R.id.swipeRefreshLayout);
         BottomNavigationView navView = findViewById(R.id.nav_view);
         mNewsDescTV = findViewById(R.id.newsDescTV);
@@ -108,10 +115,27 @@ public class MainActivity extends AppCompatActivity {
     mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
         @Override
         public void onRefresh() {
-            new TaskLoader().execute();
+            if(isNetworkAvailable()==true)
+                new TaskLoader().execute();
+            else
+            {
+                Toast.makeText(MainActivity.this, "No Network", Toast.LENGTH_LONG).show();
+            }
             mSwipeRefresh.setRefreshing(false);
         }
     });
+        if(isNetworkAvailable()==true)
+            new TaskLoader().execute();
+        else
+        {
+            Toast.makeText(this, "No Network", Toast.LENGTH_LONG).show();
+        }
+    }
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     private class TaskLoader extends AsyncTask<Void,Void,ArrayList<NewsObject>> {
@@ -124,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
 
             super.onPreExecute();
              progressDialog= new ProgressDialog(MainActivity.this);
+             progressDialog.setMessage("Fetching News");
              progressDialog.show();
         }
 
@@ -167,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
                     } else
                         newsUrl = null;
                 }
+
 
             } catch (IOException e) {
                 // TODO Auto-generated catch block
