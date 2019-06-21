@@ -14,10 +14,10 @@ import android.support.design.widget.BottomNavigationView;
 
 import android.app.LoaderManager;
 import android.support.v4.content.Loader;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.annotation.NonNull;
 
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -38,7 +38,6 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
    public TextView mNewsDescTV;
-   public SwipeRefreshLayout swipeRefresh;
    public TextView mNewsUrlTV;
     public StringBuilder t;
     public  StringBuilder n;
@@ -76,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         BottomNavigationView navView = findViewById(R.id.nav_view);
         mNewsDescTV = findViewById(R.id.newsDescTV);
-        swipeRefresh = findViewById(R.id.swipeRefreshLayout);
         //progressDialog = new ProgressDialog(getApplicationContext());
         mNewsUrlTV = findViewById(R.id.newsUrlTV);
         listView = findViewById(R.id.listview);
@@ -97,13 +95,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                new TaskLoader().execute();
-                swipeRefresh.setRefreshing(false);
-            }
-        });
+
     }
 
     private class TaskLoader extends AsyncTask<Void,Void,ArrayList<NewsObject>> {
@@ -123,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<NewsObject> mList = new ArrayList<NewsObject>();
             Document document;
             try {
+                Log.d(MainActivity.class.getSimpleName(),"Main Activity");
                 document = Jsoup.connect(url).get();
                 Elements lnews = document.select("ul.newsticker li b");
                 //Get the title of the website
